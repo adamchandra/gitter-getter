@@ -1,0 +1,53 @@
+#!/bin/zsh
+
+
+## http://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
+SOURCE="BASH_SOURCE[0]"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+    DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+    SOURCE="$(readlink "$SOURCE")"
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+
+SCRIPTDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+showhelp() {
+    echo "Usage: $SCRIPT: "
+    echo "  todo  "
+    exit 2
+}
+
+# default arg vals
+hosts=
+
+while getopts "m:h" name; do
+    case $name in
+        m)    hosts=$OPTARG;;
+        h)    showhelp $0;;
+        [?])  showhelp $0;;
+    esac
+done
+
+if [ -z "$hosts" ]; then
+    ## ...
+fi
+
+roomid="558fcd0315522ed4b3e2f65d"
+roomname="ensime-emacs"
+
+# roomid="54b58225db8155e6700e9eb0"
+# roomname="ensime_ensime-server"
+
+#roomid="558a9f7f15522ed4b3e29f77"
+#"ensime/ensime-atom"
+#roomid="55e0d9070fc9f982beaef2e3"
+#"ensime/ensime-vim"
+#roomid="5589d3f215522ed4b3e2918d"
+#"ensime/ensime-sublime"
+
+rm tmp.json
+rm "$roomname.chatMessages.json"
+query="plugin"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/$roomid/chatMessages?limit=50" | tail -n 1 > tmp.json
+curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/$roomid/chatMessages?q=$query" | tail -n 1 > tmp.json
+python -m json.tool tmp.json > "$roomname.chatMessages.json"

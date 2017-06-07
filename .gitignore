@@ -1,0 +1,36 @@
+# Users Environment Variables
+.lock-wscript
+
+# SBT
+target
+project/target
+project/project
+lib_managed
+
+# IntelliJ IDEA
+.idea*
+.idea_modules
+*.iml
+
+*.sw?
+.ensime*
+ensime.sbt
+.ensime_cache
+
+
+#pdf svg extractor
+svgdump
+
+# Common directory names
+*.d
+*.db
+
+*~
+/corpus-*
+.zz-attic
+
+*.log
+*.tmp
+
+itext*
+.sbtopts
