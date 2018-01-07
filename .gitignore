@@ -34,3 +34,5 @@ svgdump
 
 itext*
 .sbtopts
+
+secrets.conf

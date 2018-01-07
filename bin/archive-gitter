@@ -60,7 +60,7 @@ for room in rooms:
         d = dest.rsplit('/', 1)[0]
         if not os.path.exists(d):
             os.makedirs(d)
-    
+
     if os.path.exists(dest):
         print("Checking for new messages: %s" % dest)
         with open(dest) as f:
@@ -81,7 +81,7 @@ for room in rooms:
         except Exception as e:
             print("Failed to get messages for %s: %s" % (name, e))
             continue
-    
+
     while messages:
         if key == 'beforeId':
              # left-extend before

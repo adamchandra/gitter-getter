@@ -51,3 +51,35 @@ query="plugin"
 # curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/$roomid/chatMessages?limit=50" | tail -n 1 > tmp.json
 curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/$roomid/chatMessages?q=$query" | tail -n 1 > tmp.json
 python -m json.tool tmp.json > "$roomname.chatMessages.json"
+# // curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/chatMessages?q='log'"
+# // curl -q -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms?q=ensime"
+# curl -q -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms?q=ensime" > ensime-rooms
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms?q=ensime" > ensime-rooms
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms?q=ensime"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/tpolecat"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/chatMessages?q='log'" > log.json
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/chatMessages?q='LogHandler'"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/chatMessages?q='log'"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/chatMessages?q=loghandler"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/?q=loghandler"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/:resource"
+# echo curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/:resource"
+# echo curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/chatMessages"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/chatMessages" > chatmsg.json
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/chatMessages"\> chatmsg.json
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604/chatMessages"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/54cef387db8155e6700f5604"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/room/54cef387db8155e6700f5604"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/room/57542bfdc43b8c601976ecee"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/57542bfdc43b8c601976ecee"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms" > rooms
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/room/tpolecat/doobie"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms" | python -m json.tool  -
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms" | python -m json.tool
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/tpolecat\n"
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer ff9076c36e999ca2df940e77c6967b468dc67e3c" "https://api.gitter.im/v1/rooms/tpolecat/doobie/chatMessages"
+# curl -X POST -i -H "Content-Type: application/json" -H "Accept: application/json" -H "Authorization: Bearer {{token}}" "https://api.gitter.im/v1/rooms/:roomId/chatMessages/:chatMessageId" -d '{"client_id":"YOUR_CLIENT_ID","client_secret":"YOUR_CLIENT_SEC
+# curl -i -H "Accept: application/json" -H "Authorization: Bearer {{token}}" "https://api.gitter.im/v1/rooms/tpolecat/doobie/chatMessages"
