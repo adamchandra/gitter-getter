@@ -36,3 +36,5 @@ itext*
 .sbtopts
 
 secrets.conf
+
+text-formatted-messages

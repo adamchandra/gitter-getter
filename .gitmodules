@@ -1,0 +1,3 @@
+[submodule "message-archives/gitter-message-archive_typelevel@github.com"]
+	path = message-archives/gitter-message-archive_typelevel@github.com
+	url = git@github.com:typelevel/archive.git
