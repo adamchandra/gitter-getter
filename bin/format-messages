@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# ## http://stackoverflow.com/questions/59895/getting-the-source-directory-of-a-bash-script-from-within
+# SOURCE="BASH_SOURCE[0]"
+# while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+#     DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+#     SOURCE="$(readlink "$SOURCE")"
+#     [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+# done
+# SCRIPTDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+SCRIPT=`basename $0`
+
+showhelp() {
+    echo "Usage: $SCRIPT: "
+    echo "  todo  "
+    exit 2
+}
+
+# default arg vals
+file=
+
+while getopts "f:h" name; do
+    case $name in
+        f)    file=$OPTARG;;
+        h)    showhelp $0;;
+        [?])  showhelp $0;;
+    esac
+done
+
+cat $file |\
+    egrep '("text"|"displayName")' |\
+    perl -pne 's/"displayName" : "([^"]+)".*$/-\1\n\n/g' |\
+    perl -pne 's/^    "text" : "/┊ /g' |\
+    perl -pne 's/",//g' |\
+    perl -pne 's/\\n/\n┊ /g'

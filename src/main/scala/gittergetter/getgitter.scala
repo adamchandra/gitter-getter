@@ -157,14 +157,15 @@ object getGitter extends App {
 
     val rooms = getOrDie[List[RoomSchema]](response.body)
 
+    println(s"Room Count = ${rooms.length}")
+
     val roomNames = rooms.zipWithIndex.map { case (r, i) =>
       s"${i} ${r.name}"
-    }.mkString("{\n  ", "\n  ", "\n}")
+    }.mkString("rooms: {\n  ", "\n  ", "\n}")
 
-    println(s"Room Count = ${rooms.length}")
     println(roomNames)
 
-    rooms.drop(16).take(1).foreach{ room =>
+    rooms.foreach{ room =>
       fetchRoomMessages(room)
     }
   }
@@ -185,7 +186,6 @@ object getGitter extends App {
 
     if (fs.exists(msgFile)) {
       val existingFile = fs.read(msgFile)
-      // val prevJson = existingFile.asJson
 
       println("Parsing Previous Jsons")
       val prevJsons = getOrDie[List[Json]](existingFile)
@@ -227,8 +227,7 @@ object getGitter extends App {
       roomMessages.appendAll(msgs.reverse)
 
       writeCurrentMessages()
-      Thread.sleep(1000)
-
+      Thread.sleep(500)
 
       if (!msgs.isEmpty) loop()
     }
