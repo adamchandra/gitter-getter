@@ -2,24 +2,17 @@ package gittergetter
 
 import io.circe, circe._
 import circe.syntax._
-import circe.generic.auto._
-import java.time.Instant
+import java.time.{ Instant, ZoneId }
 
 import ammonite.{ops => fs}
 import fs._
 
-import InstantEncoders._
-object TagTypes {
-  import scalaz._
-  // import Scalaz._
 
-  type @@[A, B] = scalaz.@@[A, B]
-
-  sealed trait MessageID
-  val MessageID = Tag.of[MessageID]
-}
-import TagTypes._
-
+import RoomManifest._
+import java.time.format.{ DateTimeFormatter, FormatStyle }
+import java.util.Locale
+import scala.annotation.tailrec
+import java.time.Duration
 
 
 class LocalPaths(root: Path) {
@@ -62,7 +55,7 @@ class LocalPaths(root: Path) {
 
   def addJsonContent(room: String, j: Json): fs.Path = {
     val file = makeNextArchiveFile(room)
-    write(file, j.spaces4)
+    write(file, j.spaces2)
     file
   }
 
@@ -76,11 +69,6 @@ class LocalPaths(root: Path) {
     fs.write(p, manifest.asJson.spaces4)
     p
   }
-
-
-  // val initManifest = RoomManifest(
-  //   None, None, Instant.now()
-  // )
 
   def ensureRoomDirectories(roomSchema: RoomSchema): Unit = {
     val name = roomSchema.name
@@ -110,99 +98,93 @@ object getGitter extends App {
   val root: Path = fs.pwd / "gitter-output.d"
   val localPaths = new LocalPaths(root)
 
+  val EarliestMessage = Instant.now().minus(Duration.ofDays(92))
 
 
-  def fetchNextMessageBatch(room: RoomSchema, startingId: String, fetchUntil: Instant): Option[String] = {
-
-    val (messages, srcJson) = RemoteFetch.roomMessages(room.name, room.id, Some(startingId), 100)
-
-    val sortedMessages = messages
-      .sortBy{ m => m.sent.toEpochMilli() }
-      .filter(m => m.sent.isAfter(fetchUntil))
-
-    if (sortedMessages.nonEmpty) {
-      localPaths.addJsonContent(room.name, srcJson)
-      // Sorted from earliest to latest
-      sortedMessages.foreach { m =>
-        println(s"Sent: ${m.sent}: ${m.text.slice(0, 10)}...")
-      }
-      // sortedMessages.headOption.map { m =>
-      //   localPaths.updateManifest(room.name,
-      //     roomManifest.copy(
-      //       earliestMessageTime = Some(m.sent),
-      //       earliestMessageId = Some(m.id),
-      //       lastUpdate =  Instant.now()
-      //     )
-      //   )
-      // }
-      sortedMessages.headOption.map { _.id }
+  @tailrec
+  def fetchBackwards(room: RoomSchema, fromMsg: MessageSchema): Unit = {
+    if (fromMsg.sent.isBefore(EarliestMessage)) {
+      println(s"Earliest fetch cutoff ${formatInstant(EarliestMessage)} exceeded.")
     } else {
-      None
+      println(s"Fetching messages from ${room.name} prior to ${formatInstant(fromMsg.sent)}")
+      val (fetched, sourceJson) = RemoteFetch.roomMessages(room.name, room.id, Some(fromMsg.id), fetchForward=false, 100)
+      if (fetched.nonEmpty) {
+        val first = fetched.sortBy(_.sent).head
+        if (first.sent.isBefore(fromMsg.sent)) {
+          localPaths.addJsonContent(room.name, sourceJson)
+          fetchBackwards(room, first)
+        }
+      }
     }
-
   }
+
+  @tailrec
+  def fetchForwards(room: RoomSchema, fromMsg: MessageSchema): Unit = {
+    println(s"Fetching messages from ${room.name} after ${formatInstant(fromMsg.sent)}")
+    val (fetched, sourceJson) = RemoteFetch.roomMessages(room.name, room.id, Some(fromMsg.id), fetchForward=true, 100)
+    if (fetched.nonEmpty) {
+      val last = fetched.sortBy(_.sent).last
+      if (last.sent.isAfter(fromMsg.sent)) {
+        localPaths.addJsonContent(room.name, sourceJson)
+        fetchForwards(room, last)
+      }
+    }
+  }
+
 
   def updateRoomJsons(room: RoomSchema): Unit = {
     println(s"Updating room ${room.name}")
 
-    // readArchivedJsons(room)
+    readArchivedMessagesRange(room) match {
 
-    val (mostRecentMessageList, sourceJson) = RemoteFetch.roomMessages(room.name, room.id, None, 1)
-
-    mostRecentMessageList.headOption.foreach { mostRecentMessage =>
-
-      val roomManifest = localPaths.getRoomManifest(room).getOrElse {
-        val sent = mostRecentMessage.sent
-        val id = mostRecentMessage.id
-        localPaths.addJsonContent(room.name, sourceJson)
-        localPaths.updateManifest(room.name,
-          RoomManifest(
-            earliestMessageTime = sent,
-            earliestMessageId   = id,
-            latestMessageTime   = sent,
-            latestMessageId     = id,
-            lastUpdate          = Instant.MIN
-          )
-        )
-      }
+      case Some( (earliest, latest) ) =>
+        if (earliest.sent.isAfter(EarliestMessage)) {
+          fetchBackwards(room, earliest)
+        }
+        fetchForwards(room, latest)
 
 
-      while (earliestFetched.isDefined) {
-        earliestFetched = fetchNextMessageBatch(room, manifest.latestMessageId, manifest.latestMessageTime)
-      }
+      case None =>
+        val (messages, sourceJson) = RemoteFetch.roomMessages(room.name, room.id, None, fetchForward=false, 100)
+        if (messages.nonEmpty) {
+          localPaths.addJsonContent(room.name, sourceJson)
+          updateRoomJsons(room)
+        }
     }
+  }
 
+
+  def formatInstant(i: Instant): String = {
+    val formatter =
+      DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT )
+        .withLocale( Locale.US )
+        .withZone( ZoneId.systemDefault() );
+    formatter.format(i)
   }
 
 
 
-
-  def readArchivedJsons(room: RoomSchema): Seq[(String, Instant)] = {
+  def readArchivedMessagesRange(room: RoomSchema): Option[(MessageSchema, MessageSchema)] = {
     val jsonArchives = localPaths.jsonArchiveDir(room.name)
+
     val messagesWithTimestamps = ls(jsonArchives)
       .filter( _.name.endsWith(".json") )
       .map{ file =>
         val existingFile = fs.read(file)
-
-        println("Parsing Previous Jsons")
         val prevJsons = JsonSchema.getOrDie[List[Json]](existingFile)
-
-        println("Parsing Previous Messages")
-
-        prevJsons
-          .map{ js => JsonSchema.fromJsonOrDie[MessageSchema](js) }
-          .map{ messageSchema =>
-            (messageSchema.id, messageSchema.sent)
-          }
+        prevJsons.map{ js => JsonSchema.fromJsonOrDie[MessageSchema](js) }
       }
-    for {
-      msgs <- messagesWithTimestamps
-      (m, t) <- msgs
-    } {
-      println(s"${t}  Message ${m}")
-    }
 
-    messagesWithTimestamps.flatten
+    val sorted = messagesWithTimestamps.flatten.sortBy(_.sent)
+
+    if (sorted.isEmpty) None else {
+      val first = sorted.head
+      val last = sorted.last
+      val from = formatInstant(first.sent)
+      val to =  formatInstant(last.sent)
+      println(s"Known messages: From ${from} to ${to} ")
+      Some((first, last))
+    }
   }
 
   def main(): Unit = {
@@ -228,3 +210,32 @@ object getGitter extends App {
 
 }
 
+
+
+  // def findMessagesRange(m: Seq[MessageSummary]): Option[(MessageSummary, MessageSummary)]  = {
+  //   if (m.isEmpty) None else {
+  //     val sorted = m.sortBy(_.sent)
+  //     val first = sorted.head
+  //     val last = sorted.last
+  //     val len = sorted.length
+  //     val from = formatInstant(first.sent)
+  //     val to =  formatInstant(last.sent)
+  //     // first.sent.formatted(fmtstr: String)
+  //     println(s"Message (${len}): From ${from} to ${to} ")
+  //     Some((first, last))
+  //   }
+  // }
+
+  // def findMessagesRange(m: Seq[MessageSchema]): Option[(MessageSchema, MessageSchema)]  = {
+  //   if (m.isEmpty) None else {
+  //     val sorted = m.sortBy(_.sent)
+  //     val first = sorted.head
+  //     val last = sorted.last
+  //     val len = sorted.length
+  //     val from = formatInstant(first.sent)
+  //     val to =  formatInstant(last.sent)
+  //     // first.sent.formatted(fmtstr: String)
+  //     println(s"Message (${len}): From ${from} to ${to} ")
+  //     Some((first, last))
+  //   }
+  // }

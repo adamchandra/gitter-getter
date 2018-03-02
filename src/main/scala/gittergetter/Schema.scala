@@ -3,20 +3,10 @@ package gittergetter
 import java.time.Instant
 import io.circe, circe._
 import circe.generic.semiauto._
+import circe.generic.auto._
 import circe.{parser => CirceParser}
 
-import TagTypes._
 
-object InstantEncoders {
-  implicit def Encode_Instant: Encoder[Instant] =
-    Encoder[String].contramap { _.toString }
-
-  implicit def Decode_Instant: Decoder[Instant] =
-    Decoder[String].map { Instant.parse(_) }
-
-}
-
-import InstantEncoders._
 
 case class UserSchema(
   displayName     : String, // "Pelle Kr\u00f8gholt",
@@ -54,6 +44,11 @@ case class MessageSchema(
   urls       : List[UrlSchema]
 )
 
+// case class MessageSummary(
+//   id         : String,
+//   sent       : Instant
+// )
+
 case class RoomSchema(
   id          : String,  // 53307860c3599d1de448e19d,
   name        : String,  // Andrew Newdigate,
@@ -66,17 +61,25 @@ case class RoomSchema(
   githubType  : String,  // ONETOONE
 )
 
-case class MessageSummary(
-  id         : String@@MessageID,
-  sent       : Instant,
-)
 
 case class RoomManifest(
-  earliestMessage: MessageSummary,
-  latestMessage: MessageSummary
+  earliestMessage: MessageSchema,
+  latestMessage: MessageSchema
 )
 
+
 object RoomManifest {
+
+  implicit def Encode_Instant: Encoder[Instant] =
+    Encoder[String].contramap { _.toString }
+
+  implicit def Decode_Instant: Decoder[Instant] =
+    Decoder[String].map { Instant.parse(_) }
+
+  // implicit def Encode_MessageSummary: Encoder[MessageSummary] = deriveEncoder
+  // implicit def Decode_MessageSummary: Decoder[MessageSummary] = deriveDecoder
+  implicit def Encode_MessageSchema: Encoder[MessageSchema] = deriveEncoder
+  implicit def Decode_MessageSchema: Decoder[MessageSchema] = deriveDecoder
 
   implicit def Encode_RoomManifest: Encoder[RoomManifest] = deriveEncoder
   implicit def Decode_RoomManifest: Decoder[RoomManifest] = deriveDecoder

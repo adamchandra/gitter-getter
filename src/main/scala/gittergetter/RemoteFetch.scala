@@ -6,8 +6,8 @@ import circe.generic.auto._
 import ammonite.{ops => fs}
 
 import scalaj.http._
-import InstantEncoders._
 
+import RoomManifest._
 
 object RemoteFetch {
 
@@ -29,10 +29,22 @@ object RemoteFetch {
 
   lazy val token = getToken()
 
-  def roomMessages(roomName: String, roomId: String, from: Option[String], count: Int): (List[MessageSchema], Json) = {
-    println(s"Getting messages from ${from} len:${count}")
+  def roomMessages(
+    roomName: String,
+    roomId: String,
+    from: Option[String],
+    fetchForward: Boolean,
+    count: Int
+  ): (List[MessageSchema], Json) = {
+
+    Thread.sleep(2000)
+
+    val dirParam = if (fetchForward) "afterId" else "beforeId"
+    val dir = if (fetchForward) "forward" else "backward"
+
+    println(s"Fetching ${count} messages (${dir}) from ${roomName}")
     val uri = from.map{ f =>
-      apiCall(s"rooms/${roomId}/chatMessages?beforeId=${f}&limit=${count}")
+      apiCall(s"rooms/${roomId}/chatMessages?${dirParam}=${f}&limit=${count}")
     } getOrElse {
       apiCall(s"rooms/${roomId}/chatMessages?limit=${count}")
     }
@@ -42,7 +54,12 @@ object RemoteFetch {
       .asString.body
 
     val asJson = JsonSchema.getJsonOrDie(resp)
-    (JsonSchema.fromJsonOrDie[List[MessageSchema]](asJson), asJson)
+    val prevJsons = JsonSchema.getOrDie[List[Json]](resp)
+    val parsed = prevJsons.map{ js =>
+      JsonSchema.fromJsonOrDie[MessageSchema](js)
+    }
+    // (JsonSchema.fromJsonOrDie[List[MessageSchema]](asJson), asJson)
+    (parsed, asJson)
   }
 
   def roomSchemas(): List[RoomSchema] = {
