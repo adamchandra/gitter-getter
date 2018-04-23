@@ -2,18 +2,15 @@ package gittergetter
 
 import io.circe, circe._
 import circe.syntax._
-import java.time.{ Instant, ZoneId }
 
 import ammonite.{ops => fs}
 import fs._
 
 
 import RoomManifest._
-import java.time.format.{ DateTimeFormatter, FormatStyle }
-import java.util.Locale
 import scala.annotation.tailrec
 import java.time.Duration
-
+import Formatting._
 
 class LocalPaths(root: Path) {
 
@@ -92,7 +89,8 @@ class LocalPaths(root: Path) {
   }
 }
 
-object getGitter extends App {
+import java.time.{ Instant }
+object getGitter extends App with AppMainBasics {
   val PrettyPrint2Spaces = circe.Printer.spaces2
 
   val root: Path = fs.pwd / "gitter-output.d"
@@ -135,7 +133,7 @@ object getGitter extends App {
   def updateRoomJsons(room: RoomSchema): Unit = {
     println(s"Updating room ${room.name}")
 
-    readArchivedMessagesRange(room) match {
+    findArchivedMessagesRange(room) match {
 
       case Some( (earliest, latest) ) =>
         if (earliest.sent.isAfter(EarliestMessage)) {
@@ -154,16 +152,23 @@ object getGitter extends App {
   }
 
 
-  def formatInstant(i: Instant): String = {
-    val formatter =
-      DateTimeFormatter.ofLocalizedDateTime( FormatStyle.SHORT )
-        .withLocale( Locale.US )
-        .withZone( ZoneId.systemDefault() );
-    formatter.format(i)
+  // def readArchivedMessages(room: RoomSchema): Seq[MessageSchema] = {
+  def readArchivedMessages(roomName: String): Seq[MessageSchema] = {
+    val jsonArchives = localPaths.jsonArchiveDir(roomName)
+
+    val messagesWithTimestamps = ls(jsonArchives)
+      .filter( _.name.endsWith(".json") )
+      .map{ file =>
+        val existingFile = fs.read(file)
+        val prevJsons = JsonSchema.getOrDie[List[Json]](existingFile)
+        prevJsons.map{ js => JsonSchema.fromJsonOrDie[MessageSchema](js) }
+      }
+
+    messagesWithTimestamps.flatten.sortBy(_.sent)
   }
 
-
   def sortMessageArchives(room: RoomSchema): Unit = {
+
     val jsonArchives = localPaths.jsonArchiveDir(room.name)
 
     val messagesWithTimestamps = ls(jsonArchives)
@@ -190,18 +195,8 @@ object getGitter extends App {
     mv(tmpSortDir, jsonArchives)
   }
 
-  def readArchivedMessagesRange(room: RoomSchema): Option[(MessageSchema, MessageSchema)] = {
-    val jsonArchives = localPaths.jsonArchiveDir(room.name)
-
-    val messagesWithTimestamps = ls(jsonArchives)
-      .filter( _.name.endsWith(".json") )
-      .map{ file =>
-        val existingFile = fs.read(file)
-        val prevJsons = JsonSchema.getOrDie[List[Json]](existingFile)
-        prevJsons.map{ js => JsonSchema.fromJsonOrDie[MessageSchema](js) }
-      }
-
-    val sorted = messagesWithTimestamps.flatten.sortBy(_.sent)
+  def findArchivedMessagesRange(room: RoomSchema): Option[(MessageSchema, MessageSchema)] = {
+    val sorted = readArchivedMessages(room.name)
 
     if (sorted.isEmpty) None else {
       val first = sorted.head
@@ -213,55 +208,63 @@ object getGitter extends App {
     }
   }
 
-  def main(): Unit = {
+  val TB = TextBoxing
 
-    val rooms = RemoteFetch.roomSchemas()
-    rooms.foreach { roomSchema =>
-      val roomName = roomSchema.name
-      val roomArchivePath = localPaths.roomDir(roomName)
-      if (fs.exists(roomArchivePath)) {
-        println(s"-----> ${roomName}")
-      } else {
-        println(s"(new)> ${roomName}")
-        rooms.foreach{ r =>  localPaths.ensureRoomDirectories(roomSchema) }
+  def run(args: Array[String]): Unit = {
+    val argMap = argsToMap(args.toArray)
+
+    val doUpdate = hasArg("update", argMap)
+    val doFormat = hasArg("format", argMap)
+
+    if (doUpdate) {
+      val rooms = RemoteFetch.roomSchemas()
+      rooms.foreach { roomSchema =>
+        val roomName = roomSchema.name
+        val roomArchivePath = localPaths.roomDir(roomName)
+        if (fs.exists(roomArchivePath)) {
+          println(s"-----> ${roomName}")
+        } else {
+          println(s"(new)> ${roomName}")
+          rooms.foreach{ r =>  localPaths.ensureRoomDirectories(roomSchema) }
+        }
       }
+
+      rooms.foreach{ room =>
+        updateRoomJsons(room)
+      }
+
     }
 
-    rooms.foreach{ room =>
-      updateRoomJsons(room)
+    if (doFormat) {
+      println(s"starting format")
+
+      val formatOneRoom = hasArg("room", argMap)
+      if (formatOneRoom) {
+        val room = getArg("room", argMap)
+        println(s"Formatting ${room}")
+
+        val messages = readArchivedMessages(room)
+        val formattedMessages = messages.map{ messageSchema =>
+          Formatting.formatMessage(messageSchema)
+        }
+
+        val formatOutput = TB.vjoins(
+          formattedMessages
+        )
+
+        val formatted = localPaths.roomDir(room) / "formatted.txt"
+        if (fs.exists(formatted)) {
+          fs.rm(formatted)
+        }
+
+        fs.write(formatted, formatOutput.toString())
+
+      }
+
     }
+
   }
 
-  main()
+  run(args)
 
 }
-
-
-
-  // def findMessagesRange(m: Seq[MessageSummary]): Option[(MessageSummary, MessageSummary)]  = {
-  //   if (m.isEmpty) None else {
-  //     val sorted = m.sortBy(_.sent)
-  //     val first = sorted.head
-  //     val last = sorted.last
-  //     val len = sorted.length
-  //     val from = formatInstant(first.sent)
-  //     val to =  formatInstant(last.sent)
-  //     // first.sent.formatted(fmtstr: String)
-  //     println(s"Message (${len}): From ${from} to ${to} ")
-  //     Some((first, last))
-  //   }
-  // }
-
-  // def findMessagesRange(m: Seq[MessageSchema]): Option[(MessageSchema, MessageSchema)]  = {
-  //   if (m.isEmpty) None else {
-  //     val sorted = m.sortBy(_.sent)
-  //     val first = sorted.head
-  //     val last = sorted.last
-  //     val len = sorted.length
-  //     val from = formatInstant(first.sent)
-  //     val to =  formatInstant(last.sent)
-  //     // first.sent.formatted(fmtstr: String)
-  //     println(s"Message (${len}): From ${from} to ${to} ")
-  //     Some((first, last))
-  //   }
-  // }

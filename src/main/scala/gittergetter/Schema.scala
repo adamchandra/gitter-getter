@@ -9,14 +9,14 @@ import circe.{parser => CirceParser}
 
 
 case class UserSchema(
-  displayName     : String, // "Pelle Kr\u00f8gholt",
-  id              : String, // "566fce4016b6c7089cbebd83",
-  username        : String, // "pellekrogholt",
-  // avatarUrl       : String, // "https://avatars-05.gitter.im/gh/uv/4/pellekrogholt",
-  // avatarUrlMedium : String, // "https://avatars1.githubusercontent.com/u/62456?v=4&s=128",
-  // avatarUrlSmall  : String, // "https://avatars1.githubusercontent.com/u/62456?v=4&s=60",
+  displayName     : String,
+  id              : String,
+  username        : String,
+  // avatarUrl       : String,
+  // avatarUrlMedium : String,
+  // avatarUrlSmall  : String,
   // gv              : Int,
-  // url             : String, // "/pellekrogholt",
+  // url             : String,
   // v               : Int
 
 )
@@ -43,11 +43,6 @@ case class MessageSchema(
   text       : String,
   urls       : List[UrlSchema]
 )
-
-// case class MessageSummary(
-//   id         : String,
-//   sent       : Instant
-// )
 
 case class RoomSchema(
   id          : String,  // 53307860c3599d1de448e19d,
@@ -76,8 +71,6 @@ object RoomManifest {
   implicit def Decode_Instant: Decoder[Instant] =
     Decoder[String].map { Instant.parse(_) }
 
-  // implicit def Encode_MessageSummary: Encoder[MessageSummary] = deriveEncoder
-  // implicit def Decode_MessageSummary: Decoder[MessageSummary] = deriveDecoder
   implicit def Encode_MessageSchema: Encoder[MessageSchema] = deriveEncoder
   implicit def Decode_MessageSchema: Decoder[MessageSchema] = deriveDecoder
 
