@@ -98,7 +98,7 @@ object getGitter extends App {
   val root: Path = fs.pwd / "gitter-output.d"
   val localPaths = new LocalPaths(root)
 
-  val EarliestMessage = Instant.now().minus(Duration.ofDays(92))
+  val EarliestMessage = Instant.now().minus(Duration.ofDays(100))
 
 
   @tailrec
@@ -163,6 +163,32 @@ object getGitter extends App {
   }
 
 
+  def sortMessageArchives(room: RoomSchema): Unit = {
+    val jsonArchives = localPaths.jsonArchiveDir(room.name)
+
+    val messagesWithTimestamps = ls(jsonArchives)
+      .filter( _.name.endsWith(".json") )
+      .map{ file =>
+        val existingFile = fs.read(file)
+        val prevJsons = JsonSchema.getOrDie[List[Json]](existingFile)
+        val prev = prevJsons.map{ js => JsonSchema.fromJsonOrDie[MessageSchema](js) }.headOption
+        prev.map{ m => (m.sent, file) }
+      }
+
+    val sorted = messagesWithTimestamps.flatten.sortBy(_._1)
+
+    val tmpSortDir = localPaths.roomDir(room.name) / "tmp-sort"
+    mkdir(tmpSortDir)
+    sorted.zipWithIndex.foreach { case ((sent, file), i) =>
+      val nexti = "%04d".format(i)
+      val f = tmpSortDir / s"${nexti}-messages.json"
+      mv(file, f)
+    }
+
+    rm(jsonArchives)
+
+    mv(tmpSortDir, jsonArchives)
+  }
 
   def readArchivedMessagesRange(room: RoomSchema): Option[(MessageSchema, MessageSchema)] = {
     val jsonArchives = localPaths.jsonArchiveDir(room.name)

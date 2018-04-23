@@ -33,10 +33,10 @@ if [ -z "$file" ]; then
     exit 1
 fi
 
-if [ -z "$output" ]; then
-    echo "No output file specified: -o output"
-    exit 1
-fi
+# if [ -z "$output" ]; then
+#     echo "No output file specified: -o output"
+#     exit 1
+# fi
 
 
 
@@ -45,4 +45,6 @@ cat $file |\
     perl -pne 's/"displayName" *: "([^"]+)".*$/-\1\n\n/g' |\
     perl -pne 's/^\ +"text" *: "/┊ /g' |\
     perl -pne 's/",//g' |\
-    perl -pne 's/\\n/\n┊ /g' > $output
+    perl -pne 's/\\n/\n┊ /g'
+
+# > $output

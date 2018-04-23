@@ -12,5 +12,5 @@ SCRIPTDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 SCRIPT=`basename $0`
 
 
-# find message-archives/ -type f -name '*.json' -printf "$SCRIPTDIR/format-messages -f %p -o %h/%f.txt\n"
-find message-archives/ -type f -name '*.json' -printf "$SCRIPTDIR/format-messages -f %p -o text-formatted-messages/%f.txt\n"
+# find gitter-output.d/ -type f -name '*.json' -printf "$SCRIPTDIR/format-messages -f %p -o text-formatted-messages/%f.txt\n"
+# find gitter-output.d/ -type d -name 'json-archive' -printf "$SCRIPTDIR/format-messages -f %p -o text-formatted-messages/%f.txt\n"
